@@ -1,34 +1,35 @@
 #Imports
 import boto3
-import json
+from langchain_aws import ChatBedrock 
 
-#Create the client
-client = boto3.client(service_name='bedrock-runtime')
+#from langchain.llms.bedrock import Bedrock
 
-#Construct the body
-#specify your prompt
-body = json.dumps({
-    "prompt": "", 
-    "maxTokens": 200,
-    "temperature": 0.5,
-    "topP": 0.5
-})
+#Create the bedrock client
+boto3_client = boto3.client('bedrock-runtime')
 
-#Specify model id and content types
-modelId = ''
-accept = 'application/json'
-contentType = 'application/json'
 
-#Invoke the model
-response = client.invoke_model(
-    body=body, 
-    modelId=modelId, 
-    accept=accept, 
-    contentType=contentType
+#setting model inference parameters
+inference_modifier = {
+  "temperature" : 0.5,
+  "top_p" : 1,
+  "max_tokens" : 1000
+}
+
+
+#Create the llm
+llm = ChatBedrock(
+model_id="anthropic.claude-3-sonnet-20240229-v1:0",
+client = boto3_client,
+model_kwargs = inference_modifier
 )
 
-#Extract the response
-response_body = json.loads(response.get('body').read())
 
-#Display the output
-print(response_body.get('completions')[0].get('data').get('text'))
+#Generate the response 
+response = llm.invoke("""  
+    Human: Translate to french: 'Learning about Gnerative AI is fun and exciting with Amazon Bedrock'   
+    
+    Answer: """)  
+
+    
+#Display the result
+print(repr(response))    

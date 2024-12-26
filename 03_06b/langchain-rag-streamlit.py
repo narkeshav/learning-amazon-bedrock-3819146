@@ -39,8 +39,13 @@ def config_vector_db(filename):
     return vectorstore_faiss
 
 #Configuring the llm and vector store
+llm= config_llm()
+vectorstore_faiss = config_vector_db("03_06b/social-media-training.pdf")
 
 #Set up memory
+msgs = StreamlitChatMessageHistory(key="langchain_messages")
+if len(msgs.messages)==0 :
+    msgs.add_ai_message("How can I help you ?")
 
 #Creating the template   
 my_template = """
@@ -58,9 +63,42 @@ Assistant:
 """
 
 #Configure prompt template
+prompt_template = PromptTemplate(
+    input_variables= ['info','input'],
+    template= my_template
+)
+    
 
 #Create llm chain
+question_chain = LLMChain(
+    llm=llm,
+    prompt = prompt_template,
+    output_key="answer"
+)
+
 
 #Render current messages from StreamlitChatMessageHistory
+for msg in msgs.messages:
+    st.chat_message(msg.type).write(msg.content)
+
 
 #If user inputs a new prompt, generate and draw a new response
+if prompt := st.chat_input():
+    st.chat_message("human").write(prompt)
+
+    #retrieve releveant documents using a similarity search
+    docs = vectorstore_faiss.similarity_search_with_score(prompt)
+    info = ""
+    for doc in docs:
+        info += doc[0].page_content + '\n'
+
+
+    #invoke llm
+    output = question_chain.invoke({"input":prompt, "info" : info})
+
+    #adding messages to history
+    msgs.add_user_message(prompt)
+    msgs.add_ai_message(output['answer'])
+
+    #display the output
+    st.chat_message("ai").write(output['answer'])
