@@ -214,16 +214,6 @@ if st.session_state.waiting_for_answer:
             st.markdown(response)
             
            
-            #Feedback Mechanism
-            # Define columns for feedback buttons
-            # Simplified feedback buttons
-            if st.button("👍 Helpful", key=f"helpful_{len(st.session_state.messages)}"):
-                st.success("Thank you for your helpful feedback!")
-
-            if st.button("👎 Not Helpful", key=f"not_helpful_{len(st.session_state.messages)}"):
-                st.error("We're sorry the response wasn't helpful. We'll work on improving it.")
-
-
             logger.info(f"Received query: {query}")
             logger.info(f"Retrieved relevant documents")
             logger.info(f"Generated response: {response[:50]}...")
@@ -234,4 +224,20 @@ if st.session_state.waiting_for_answer:
             st.session_state.waiting_for_answer = False
             st.session_state.current_prompt = None
 
+
+            #Feedback Mechanism
+            # Define columns for feedback buttons
+            # Simplified feedback buttons
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("👍 Helpful", key=f"helpful_{len(st.session_state.messages)}"):
+                    st.success("Thank you for your helpful feedback!")
+                    logger.info(f"Feedback: Helpful for query: {query[:30]}...")
+
+            with col2:
+                if st.button("👎 Not Helpful", key=f"not_helpful_{len(st.session_state.messages)}"):
+                    st.error("We're sorry the response wasn't helpful. We'll work on improving it.")
+                    logger.info(f"Feedback: Not Helpful for query: {query[:30]}...")
+
+            
     st.rerun()
