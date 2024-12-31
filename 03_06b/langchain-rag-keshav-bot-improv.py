@@ -177,6 +177,7 @@ def simulate_progress():
         progress_bar.progress(i + 1)
     progress_bar.empty()
 
+
 # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -184,36 +185,26 @@ for message in st.session_state.messages:
 
 # Chat input
 if prompt := st.chat_input("What is your question?"):
-    if not prompt.strip():  # Check if the prompt is empty or just whitespace
+    if not prompt.strip():
         st.warning("Please enter a valid question.")
     else:
-        # Store the prompt in session state
         st.session_state.current_prompt = prompt
         st.session_state.waiting_for_answer = True
-        # Don't append to messages yet
         st.rerun()
 
 # Generate and display response
 if st.session_state.waiting_for_answer:
     query = st.session_state.get('current_prompt', '')
-    # Display the user's message once
     with st.chat_message("user"):
         st.markdown(query)
     
     with st.chat_message("assistant"):
         try:
-            with st.spinner("Retrieving relevant information..."):
-                simulate_progress()
-                info = retrieve_relevant_documents(query)
-            with st.spinner("Generating response..."):
-                simulate_progress()
-                output = generate_response(query, info)
+            info = retrieve_relevant_documents(query)
+            output = generate_response(query, info)
             response = output['answer']
-            # Only update chat history after response is generated
             update_chat_history(query, response)
             st.markdown(response)
-            
-           
             logger.info(f"Received query: {query}")
             logger.info(f"Retrieved relevant documents")
             logger.info(f"Generated response: {response[:50]}...")
@@ -223,21 +214,17 @@ if st.session_state.waiting_for_answer:
         finally:
             st.session_state.waiting_for_answer = False
             st.session_state.current_prompt = None
+            st.rerun()
 
-
-            #Feedback Mechanism
-            # Define columns for feedback buttons
-            # Simplified feedback buttons
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("👍 Helpful", key=f"helpful_{len(st.session_state.messages)}"):
-                    st.success("Thank you for your helpful feedback!")
-                    logger.info(f"Feedback: Helpful for query: {query[:30]}...")
-
-            with col2:
-                if st.button("👎 Not Helpful", key=f"not_helpful_{len(st.session_state.messages)}"):
-                    st.error("We're sorry the response wasn't helpful. We'll work on improving it.")
-                    logger.info(f"Feedback: Not Helpful for query: {query[:30]}...")
-
-            
-    st.rerun()
+# Display feedback buttons after the response is shown
+if st.session_state.messages and st.session_state.messages[-1]['role'] == 'assistant':
+    response_index = len(st.session_state.messages) - 1
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("👍 Helpful", key=f"helpful_{response_index}"):
+            st.success("Thank you for your helpful feedback!")
+            logger.info(f"Feedback: Helpful for query: {st.session_state.messages[response_index - 1]['content'][:30]}...")
+    with col2:
+        if st.button("👎 Not Helpful", key=f"not_helpful_{response_index}"):
+            st.error("We're sorry the response wasn't helpful. We'll work on improving it.")
+            logger.info(f"Feedback: Not Helpful for query: {st.session_state.messages[response_index - 1]['content'][:30]}...")
