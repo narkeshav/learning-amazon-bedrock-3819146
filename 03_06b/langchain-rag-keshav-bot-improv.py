@@ -217,14 +217,15 @@ if st.session_state.waiting_for_answer:
             st.rerun()
 
 # Display feedback buttons after the response is shown
-if st.session_state.messages and st.session_state.messages[-1]['role'] == 'assistant':
-    response_index = len(st.session_state.messages) - 1
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("👍 Helpful", key=f"helpful_{response_index}"):
-            st.success("Thank you for your helpful feedback!")
-            logger.info(f"Feedback: Helpful for query: {st.session_state.messages[response_index - 1]['content'][:30]}...")
-    with col2:
-        if st.button("👎 Not Helpful", key=f"not_helpful_{response_index}"):
-            st.error("We're sorry the response wasn't helpful. We'll work on improving it.")
-            logger.info(f"Feedback: Not Helpful for query: {st.session_state.messages[response_index - 1]['content'][:30]}...")
+if len(st.session_state.messages) >= 2:
+    if st.session_state.messages[-2]['role'] == 'user' and st.session_state.messages[-1]['role'] == 'assistant':
+        response_index = len(st.session_state.messages) - 1
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("👍 Helpful", key=f"helpful_{response_index}"):
+                st.success("Thank you for your helpful feedback!")
+                logger.info(f"Feedback: Helpful for query: {st.session_state.messages[response_index - 1]['content'][:30]}...")
+        with col2:
+            if st.button("👎 Not Helpful", key=f"not_helpful_{response_index}"):
+                st.error("We're sorry the response wasn't helpful. We'll work on improving it.")
+                logger.info(f"Feedback: Not Helpful for query: {st.session_state.messages[response_index - 1]['content'][:30]}...")
